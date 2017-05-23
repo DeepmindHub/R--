@@ -1,0 +1,40 @@
+closeAllConnections()
+rm(list=ls())
+setwd("/Volumes/16 DOS/R_nbs")
+logitML<-read.csv("LogitML2.csv",sep=",",header=TRUE,fileEncoding="latin1")
+logitML<-logitML[1:192,]
+library(ISLR)
+library(neuralnet)
+library(caTools)
+
+set.seed(1500)
+
+padron <- as.data.frame(scale(logitML[,c(18:29,31)],center = apply(logitML[,c(18:29,31)], 2, min), scale = apply(logitML[,c(18:29,31)], 2, max) - apply(logitML[,c(18:29,31)], 2, min)))
+
+c0_recomend = as.numeric(logitML$c0_recomend)
+data = cbind(c0_recomend,padron)
+
+split = sample.split(data$c0_recomend, SplitRatio = 0.80)
+train = subset(data, split == TRUE)
+test = subset(data, split == FALSE)
+vars <- names(padron)
+
+for (i in c(1,7)){
+  print(which(names(test)==vars[i]))}
+
+gg <- paste(feats,collapse=' + ')
+gg <- paste('c0_recomend ~',gg)
+gg <- as.formula(gg)
+neural <- neuralnet(gg,data,hidden=c(4,4),linear.output=TRUE,learningrate = 0.01, stepmax=10000)
+
+predicted<- compute(neural,data[,2:14])
+predicted$net.result-data[,1]
+1-abs(mean(abs(predicted$net.result)-data[,1]))
+
+weights<-predicted.nn.values$neurons
+
+par(mfrow=c(1,1))
+par(mar=c(4, 2, 2, 2))
+
+### Requires Quartz to plot
+plot(nn)
